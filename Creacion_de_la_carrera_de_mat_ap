@@ -1,0 +1,258 @@
+#Proyecto 1
+#Padron Hernandez Jose Domingo 320055285
+
+from google.colab import drive
+import pandas as pd
+import numpy as np
+drive.mount("/content/gdrive")
+
+
+df= pd.read_excel(r"/content/Creacion_de_la_carrera_de_mat_ap.xlsx")
+print(df)
+
+
+# importar pandas
+import pandas as pd
+
+# se asume que el dataframe 'df' ya está cargado
+
+# preparar las listas de nodos y arcos, usando listas
+a = list(df["Actividad"])  # lista de actividades
+b = []  # lista de arcos
+
+# iterar sobre las filas del dataframe
+for i, r in df.iterrows():
+    c = r['Actividad']
+    d = r['Duracion']
+    e = r['Precedentes']
+
+    # manejar actividades con múltiples precedentes
+    if pd.isna(e):
+        # actividad sin precedentes
+        b.append((None, c, d))
+    else:
+        # separar los precedentes si son múltiples, usando comas
+        e = str(e).split(',')
+        for f in e:
+            b.append((int(f.strip()), c, d))
+
+# imprimir nodos y arcos
+print("Lista Actividades:", a)
+print("Arcos:", b)
+
+
+# Lista de nodos
+nodos = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+
+# Lista de arcos con formato (nodo_inicio, nodo_destino, duración)
+arcos = [
+    (None, 1, 3), (1, 2, 15), (2, 3, 10), (3, 4, 2), (4, 5, 8), (4, 6, 10), (4, 7, 10), (4, 8, 8), (4, 9, 5),
+    (5, 10, 20), (6, 11, 10), (7, 12, 8), (8, 13, 6), (11, 14, 10), (10, 15, 20), (14, 15, 20), (12, 16, 15),
+    (13, 16, 15), (18, 16, 15), (9, 17, 10), (16, 17, 10), (15, 18, 3), (18, 19, 8), (17, 20, 8), (19, 20, 8), (20, 21, 8)
+]
+
+
+class G:
+    def __init__(self):
+        """crea un grafo vacío, sin vértices ni conexiones"""
+        self.vertices = []  # almacenar vértices
+        self.conexiones = []  # almacenar conexiones entre vértices
+        self.tiempoInicio = {}  # tiempo de inicio de cada nodo
+        self.tiempoFin = {}  # tiempo de finalización de cada nodo
+        self.caminoCritico = []  # lista del camino crítico
+
+    def VN(self, vertice):
+        """incluye un nuevo vértice si aún no existe en el grafo"""
+        if vertice not in self.vertices:
+            self.vertices.append(vertice)
+            self.tiempoInicio[vertice] = 0  # inicializar con tiempo de inicio cero
+
+    def AN(self, conexion):
+        if len(conexion) == 3 and (conexion[0] is None or conexion[0] in self.vertices) and conexion[1] in self.vertices:
+            self.conexiones.append(conexion)
+        else:
+            print("no se pudo añadir conexión:", conexion)
+
+    def visualizarConexiones(self):
+        """muestra todas las conexiones entre vértices"""
+        for conexion in self.conexiones:
+            if conexion[0] is None:
+                print(f"inicio -> {conexion[1]} dura {conexion[2]}")
+            else:
+                print(f"{conexion[0]} -> {conexion[1]} dura {conexion[2]}")
+
+    def configurarGrafo(self, listaVertices, listaConexiones):
+        """configura el grafo con vértices y conexiones proporcionadas"""
+        for vertice in listaVertices:
+            self.VN(vertice)
+        for conexion in listaConexiones:
+            self.AN(conexion)
+        self.visualizarConexiones()
+
+
+# Inicialización y configuración del grafo
+miGrafo = G()
+miGrafo.configurarGrafo(a, b)
+
+
+class G:
+    def __init__(self, nodos, arcos):
+        """crea un grafo e inicializa con nodos y arcos"""
+        self.vertices = []  # almacenar vértices
+        self.conexiones = []  # almacenar conexiones entre vértices
+        self.tiempoInicio = {}  # tiempos de inicio
+        self.tiempoFin = {}  # tiempos de final
+
+        self.configurar_nodos(nodos)
+        self.configurar_arcos(arcos)
+        self.agregar_nodo_final(nodos)
+
+    def configurar_nodos(self, nodos):
+        """añade múltiples nodos al grafo"""
+        for nodo in nodos:
+            self.f(nodo)
+
+    def configurar_arcos(self, arcos):
+        """añade múltiples arcos al grafo"""
+        for arco in arcos:
+            self.g(arco)
+
+    def agregar_nodo_final(self, nodos):
+        """configura los nodos iniciales y finales, y añade conexiones predeterminadas"""
+        inicio_nodo = 0
+        final_nodo = 22
+
+        self.f(inicio_nodo)
+        self.g((inicio_nodo, 1, 3))  # conexión inicial modificada
+        self.f(final_nodo)
+        self.g((21, final_nodo, 0))  # conexión desde el último nodo al final
+
+        for nodo in nodos:
+            if not any(arco[0] == nodo for arco in self.conexiones):
+                self.g((nodo, final_nodo, 0))  # arcos imaginarios al nodo final
+
+    def f(self, nodo):
+        if nodo not in self.vertices:
+            self.vertices.append(nodo)
+            self.tiempoInicio[nodo] = 0
+
+    def g(self, arco):
+        self.conexiones.append(arco)
+
+    def h(self):
+        # calcula el tiempo de inicio para cada nodo
+        cambio = True
+        while cambio:
+            cambio = False
+            for conexion in self.conexiones:
+                if conexion[0] is not None and self.tiempoInicio[conexion[1]] < self.tiempoInicio[conexion[0]] + conexion[2]:
+                    self.tiempoInicio[conexion[1]] = self.tiempoInicio[conexion[0]] + conexion[2]
+                    cambio = True
+
+    def i(self):
+        # calcula el tiempo final para cada nodo
+        final_nodo = 22
+        for nodo in self.vertices:
+            self.tiempoFin[nodo] = float('inf')
+        self.tiempoFin[final_nodo] = self.tiempoInicio[final_nodo]
+
+        cambio = True
+        while cambio:
+            cambio = False
+            for conexion in reversed(self.conexiones):
+                if conexion[0] is not None and self.tiempoFin[conexion[0]] > self.tiempoFin[conexion[1]] - conexion[2]:
+                    nuevo_tiempo = self.tiempoFin[conexion[1]] - conexion[2]
+                    if self.tiempoFin[conexion[0]] > nuevo_tiempo:
+                        self.tiempoFin[conexion[0]] = nuevo_tiempo
+                        cambio = True
+
+    def j(self):
+        for nodo in self.vertices:
+            print(f"Nodo {nodo}: Inicio más temprano = {self.tiempoInicio[nodo]}, Final más tardío = {self.tiempoFin[nodo]}")
+
+# Crear y configurar el grafo
+miGrafo = G(nodos, arcos)
+miGrafo.h()
+miGrafo.i()
+miGrafo.j()
+
+
+class Graf:
+    def __init__(self):
+        self.nd = []  # Lista de nodos
+        self.arc = []  # Lista de arcos
+        self.es = {}  # Tiempos de inicio más tempranos (Earliest Start)
+        self.lf = {}  # Tiempos de finalización más tardíos (Latest Finish)
+        self.cc = []  # Lista de actividades críticas
+
+    def agNd(self, n):
+        """Añade un nodo al grafo y establece su tiempo de inicio inicial en 0."""
+        self.nd.append(n)
+        self.es[n] = 0
+
+    def agArc(self, a):
+        """Añade un arco al grafo."""
+        self.arc.append(a)
+
+    def ini(self):
+        """Calcula el tiempo de inicio más temprano para cada nodo basado en los arcos."""
+        for _ in range(len(self.nd)):
+            for a in self.arc:
+                if a[0] is not None:
+                    self.es[a[1]] = max(self.es.get(a[1], 0), self.es[a[0]] + a[2])
+
+    def cf(self):
+        """Calcula el tiempo de finalización más tardío para cada nodo."""
+        for n in self.nd:
+            self.lf[n] = float('inf')
+        final_node = max(self.es, key=self.es.get)  # Asumimos el último nodo por el mayor ES
+        self.lf[final_node] = self.es[final_node]
+
+        cambio = True
+        while cambio:
+            cambio = False
+            for a in reversed(self.arc):
+                if a[0] is not None and self.lf[a[0]] > self.lf[a[1]] - a[2]:
+                    nuevo_lf = self.lf[a[1]] - a[2]
+                    if self.lf[a[0]] > nuevo_lf:
+                        self.lf[a[0]] = nuevo_lf
+                        cambio = True
+
+    def crit(self):
+        """Identifica y guarda las actividades críticas basadas en los tiempos de inicio y final."""
+        for n in self.nd:
+            if self.es[n] == self.lf[n]:
+                self.cc.append(n)
+
+    def printCC(self):
+        """Imprime la lista de actividades críticas."""
+        print("Actividades Críticas:", self.cc)
+
+def reporte(self):
+        """Genera un reporte del proyecto y lo guarda en un archivo de texto."""
+        with open("project_report.txt", "w") as file:
+            tiempo_total = self.lf[max(self.lf, key=self.lf.get)]
+            file.write(f"Tiempo Total del Proyecto: {tiempo_total}\n")
+            actividades_criticas = ", ".join(map(str, self.cc))
+            file.write(f"Actividades Críticas: {actividades_criticas}\n")
+
+def imprimir_reporte():
+    """Lee y muestra el contenido del archivo de reporte."""
+    with open("project_report.txt", "r") as file:
+        content = file.read()
+        print(content)
+
+
+
+graf = Graf()  # Crear una instancia de Graf
+for n in nodos:  # Añadir nodos
+    graf.agNd(n)
+for a in arcos:  # Añadir arcos
+    graf.agArc(a)
+
+
+graf.ini()  # Calcular los tiempos de inicio más tempranos
+graf.cf()   # Calcular los tiempos de finalización más tardíos
+graf.crit() # Identificar actividades críticas
+graf.printCC()  # Imprimir las actividades críticas
+reporte(graf)  # Generar reporte
